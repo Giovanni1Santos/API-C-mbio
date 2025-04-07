@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import "./App.css";
 import { getCambio, getMoedas } from "./cambio";
-import MoedaSelect from "./MoedaSelect";
+import MoedaSelectOptions from "./MoedaSelect";
 
 function App() {
   const [moedas, setMoedas] = useState<Record<string, string>>({});
@@ -81,11 +81,7 @@ function App() {
           }}
           style={{ padding: "5px", marginLeft: "10px" }}
         >
-          {Object.entries(moedas).map(([code, name]) => (
-            <option key={code} value={code}>
-              {code.toUpperCase()} - {name}
-            </option>
-          ))}
+          <MoedaSelectOptions moedas={moedas} />
         </select>
       </div>
 
@@ -108,7 +104,7 @@ function App() {
           }}
           style={{ padding: "5px", marginLeft: "10px" }}
         >
-          <MoedaSelect moedas={moedas} />
+          <MoedaSelectOptions moedas={moedas} />
         </select>
       </div>
 
