@@ -1,26 +1,23 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import "./App.css";
+import { getCambio, getMoedas } from "./cambio";
+import MoedaSelect from "./MoedaSelect";
 
 function App() {
   const [moedas, setMoedas] = useState<Record<string, string>>({});
   const [moedaDe, setMoedaDe] = useState("brl");
   const [moedaPara, setMoedaPara] = useState("usd");
   const [valor, setValor] = useState(1);
+  const [valorInput, setValorInput] = useState("1");
   const [resultado, setResultado] = useState<number | null>(null);
+  const [resultadoMoeda, setResultadoMoeda] = useState<string>("");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
     setCarregando(true);
-    fetch(
-      "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json"
-    )
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Falha ao carregar moedas");
-        }
-        return res.json();
-      })
+    getMoedas()
       .then((data) => setMoedas(data))
       .catch((err) => {
         console.error("Erro ao buscar moedas:", err);
@@ -29,37 +26,46 @@ function App() {
       .finally(() => setCarregando(false));
   }, []);
 
-  const converterMoeda = () => {
-    if (!valor || valor <= 0) {
+  useEffect(() => {
+    const valorNum = Number(valor);
+    if (isNaN(valorNum) || valorNum < 0) {
       setErro("Por favor, insira um valor válido");
       return;
     }
 
     setCarregando(true);
     setErro("");
-    const url = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${moedaDe}.json`;
 
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Falha na resposta da API");
+    getCambio(moedaDe, moedaPara)
+      .then((cambio) => {
+        if (cambio === undefined) {
+          throw new Error("Falha ao carregar câmbio");
         }
-        return res.json();
-      })
-      .then((data) => {
-        if (data[moedaDe] && data[moedaDe][moedaPara]) {
-          const resultadoConvertido = valor * data[moedaDe][moedaPara];
-          setResultado(resultadoConvertido);
-        } else {
-          throw new Error("Conversão não disponível para este par de moedas");
-        }
+        const resultadoConvertido = valorNum * cambio;
+        setResultado(resultadoConvertido);
+        setResultadoMoeda(moedaPara);
       })
       .catch((err) => {
         console.error("Erro ao converter:", err);
         setErro("Erro na conversão: " + err.message);
         setResultado(null);
+        setResultadoMoeda("");
       })
       .finally(() => setCarregando(false));
+  }, [moedaDe, moedaPara, valor]);
+
+  const _setValorDebounced = useDebouncedCallback((valor: string) => {
+    const valorNum = Number(valor);
+    if (isNaN(valorNum) || valorNum < 0) {
+      setErro("Por favor, insira um valor válido");
+      return;
+    }
+    setValor(valorNum);
+  }, 400);
+  const setValorDebounced = (valor: string) => {
+    setCarregando(true);
+    setErro("");
+    _setValorDebounced(valor);
   };
 
   return (
@@ -70,7 +76,9 @@ function App() {
         <label>De: </label>
         <select
           value={moedaDe}
-          onChange={(e) => setMoedaDe(e.target.value)}
+          onChange={(e) => {
+            setMoedaDe(e.target.value);
+          }}
           style={{ padding: "5px", marginLeft: "10px" }}
         >
           {Object.entries(moedas).map(([code, name]) => (
@@ -81,18 +89,26 @@ function App() {
         </select>
       </div>
 
+      <button
+        onClick={() => {
+          const tmp = moedaPara;
+          setMoedaPara(moedaDe);
+          setMoedaDe(tmp);
+        }}
+      >
+        Trocar
+      </button>
+
       <div style={{ marginBottom: "15px" }}>
         <label>Para: </label>
         <select
           value={moedaPara}
-          onChange={(e) => setMoedaPara(e.target.value)}
+          onChange={(e) => {
+            setMoedaPara(e.target.value);
+          }}
           style={{ padding: "5px", marginLeft: "10px" }}
         >
-          {Object.entries(moedas).map(([code, name]) => (
-            <option key={code} value={code}>
-              {code.toUpperCase()} - {name}
-            </option>
-          ))}
+          <MoedaSelect moedas={moedas} />
         </select>
       </div>
 
@@ -100,16 +116,19 @@ function App() {
         <label>Valor: </label>
         <input
           type="number"
-          value={valor}
+          value={valorInput}
           min="0"
           step="0.01"
-          onChange={(e) => setValor(Number(e.target.value))}
+          onChange={(e) => {
+            setValorInput(e.target.value);
+            setValorDebounced(e.target.value);
+          }}
           style={{ padding: "5px", marginLeft: "10px" }}
         />
       </div>
 
       <button
-        onClick={converterMoeda}
+        // onClick={converterMoeda}
         disabled={carregando}
         style={{
           padding: "10px 15px",
@@ -127,7 +146,7 @@ function App() {
 
       {resultado !== null && !erro && (
         <h2 style={{ marginTop: "20px" }}>
-          Resultado: {resultado.toFixed(2)} {moedaPara.toUpperCase()}
+          Resultado: {resultado.toFixed(5)} {resultadoMoeda.toUpperCase()}
         </h2>
       )}
     </div>
