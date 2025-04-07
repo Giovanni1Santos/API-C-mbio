@@ -1,6 +1,6 @@
 import React from "react";
 
-const MoedaSelect = React.memo(
+const MoedaSelectOptions = React.memo(
   ({ moedas }: { moedas: Record<string, string> }) => {
     return Object.entries(moedas).map(([code, name]) => (
       <option key={code} value={code}>
@@ -10,4 +10,4 @@ const MoedaSelect = React.memo(
   }
 );
 
-export default MoedaSelect;
+export default MoedaSelectOptions;
