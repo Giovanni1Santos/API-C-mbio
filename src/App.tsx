@@ -3,6 +3,7 @@ import { useDebouncedCallback } from "use-debounce";
 import "./App.css";
 import { getCambio, getMoedas } from "./cambio";
 import MoedaSelectOptions from "./MoedaSelect";
+import HistoricoCambio from "./HistoricoCambio";
 
 function App() {
   const [moedas, setMoedas] = useState<Record<string, string>>({});
@@ -145,6 +146,7 @@ function App() {
           Resultado: {resultado.toFixed(5)} {resultadoMoeda.toUpperCase()}
         </h2>
       )}
+      <HistoricoCambio moedaDe={moedaDe} moedaPara={moedaPara} />
     </div>
   );
 }
