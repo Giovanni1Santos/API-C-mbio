@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from "react";
+import { getHistoricoPeriodo } from "./cambio";
 
 interface HistoricoProps {
   moedaDe: string;
   moedaPara: string;
 }
 
-interface DadosHistorico {
+interface DadoHistorico {
   date: string;
-  [key: string]: any; // Para acomodar a estrutura dinâmica da resposta
+  taxa: number | null;
+  erro?: string;
 }
 
 const HistoricoCambio: React.FC<HistoricoProps> = ({ moedaDe, moedaPara }) => {
-  const [dados, setDados] = useState<DadosHistorico[]>([]);
+  const [dados, setDados] = useState<DadoHistorico[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
-  const [dias, setDias] = useState(7); // Padrão: últimos 7 dias
+  const [dias, setDias] = useState(7);
 
   useEffect(() => {
     if (!moedaDe || !moedaPara) return;
@@ -24,32 +26,18 @@ const HistoricoCambio: React.FC<HistoricoProps> = ({ moedaDe, moedaPara }) => {
       setErro("");
       
       try {
-        const datas: any[] = [];
-        const hoje = new Date();
+        const resultados = await getHistoricoPeriodo(moedaDe, moedaPara, dias);
+        setDados(resultados);
         
-        for (let i = 0; i < dias; i++) {
-          const data = new Date(hoje);
-          data.setDate(hoje.getDate() - i);
-          const dataFormatada = data.toISOString().split('T')[0];
-          datas.push(dataFormatada);
+        // Verifica se há erros em algum dos resultados
+        const temErros = resultados.some(item => item.erro);
+        if (temErros) {
+          setErro("Algumas datas não puderam ser carregadas");
         }
-
-        const resultados = await Promise.all(
-          datas.map(async (data) => {
-            const url = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${data}/v1/currencies/${moedaDe}.json`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`Erro ao buscar dados para ${data}`);
-            return res.json();
-          })
-        );
-
-        setDados(resultados.map((res, index) => ({
-          date: datas[index],
-          [moedaDe]: res[moedaDe]
-        })));
       } catch (err) {
         console.error("Erro ao buscar histórico:", err);
         setErro("Erro ao carregar histórico de câmbio");
+        setDados([]);
       } finally {
         setCarregando(false);
       }
@@ -92,7 +80,7 @@ const HistoricoCambio: React.FC<HistoricoProps> = ({ moedaDe, moedaPara }) => {
                 <tr key={item.date}>
                   <td style={{ border: "1px solid #ddd", padding: "8px" }}>{item.date}</td>
                   <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {item[moedaDe]?.[moedaPara]?.toFixed(6) || "N/A"}
+                    {item.taxa !== null ? item.taxa.toFixed(6) : "N/A"}
                   </td>
                 </tr>
               ))}
