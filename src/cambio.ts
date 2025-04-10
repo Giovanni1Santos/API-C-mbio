@@ -11,10 +11,7 @@ interface ResponseData {
   };
 }
 
-interface DadosHistorico {
-  date: string;
-  [key: string]: any;
-}
+
 
 export async function getMoedas() {
   const res = await fetch(
