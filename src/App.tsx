@@ -80,7 +80,7 @@ function App() {
           onChange={(e) => {
             setMoedaDe(e.target.value);
           }}
-          style={{ padding: "5px", marginLeft: "10px" }}
+          style={{ padding: "5px", marginLeft: "10px", borderRadius: "5px" }}
         >
           <MoedaSelectOptions moedas={moedas} />
         </select>
@@ -91,6 +91,15 @@ function App() {
           const tmp = moedaPara;
           setMoedaPara(moedaDe);
           setMoedaDe(tmp);
+        }}
+
+        style={{
+          padding: "10px 15px",
+          backgroundColor: "#white",
+          color: "black",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
         }}
       >
         Trocar
@@ -120,7 +129,7 @@ function App() {
             setValorInput(e.target.value);
             setValorDebounced(e.target.value);
           }}
-          style={{ padding: "5px", marginLeft: "10px" }}
+          style={{ padding: "5px", marginLeft: "10px",  borderRadius: "5px"}}
         />
       </div>
 
